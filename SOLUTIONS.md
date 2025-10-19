@@ -2,6 +2,12 @@
 
 This file contains the complete implementation solutions for the workshop. As the instructor, you can refer to this during the workshop or share it afterward.
 
+**Note:** These solutions use simple approaches for teaching clarity. For production applications, consider:
+- Using `crypto.randomUUID()` for message IDs instead of `Date.now()`
+- Adding input validation for API requests
+- Implementing proper error boundaries and retry logic
+- Using the AI SDK's built-in utilities for stream parsing
+
 ## Task 1 Solution: API Route Implementation
 
 Complete `app/api/chat/route.ts`:
@@ -40,6 +46,8 @@ export async function POST(req: NextRequest) {
 ## Task 2 Solution: Frontend Implementation
 
 ### Option A: Using `useChat` Hook (Recommended)
+
+**This is the recommended approach for the workshop** as it handles all the complexity of streaming, message management, and state updates automatically. The AI SDK's `useChat` hook is production-ready and follows best practices.
 
 Replace the content of `components/ChatInterface.tsx` with:
 
