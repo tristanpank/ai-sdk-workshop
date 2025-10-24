@@ -215,6 +215,7 @@ In AI SDK v5, messages have a `parts` structure that represents different types 
 type Message = {
   id: string;
   role: 'user' | 'assistant' | 'system';
+  content: string; // Legacy property, still available
   parts: Array<TextPart | ToolCallPart | ToolResultPart>;
 };
 
@@ -244,20 +245,25 @@ type ToolResultPart = {
 {messages.map((message) => (
   <div key={message.id}>
     {message.parts?.map((part, idx) => {
+      // Use part-specific IDs when available, fallback to index
+      const key = part.type === 'tool-call' || part.type === 'tool-result' 
+        ? part.toolCallId 
+        : `${message.id}-${idx}`;
+      
       switch (part.type) {
         case 'text':
-          return <p key={idx}>{part.text}</p>;
+          return <p key={key}>{part.text}</p>;
         
         case 'tool-call':
           return (
-            <div key={idx} className="tool-call">
+            <div key={key} className="tool-call">
               Calling {part.toolName}...
             </div>
           );
         
         case 'tool-result':
           return (
-            <div key={idx} className="tool-result">
+            <div key={key} className="tool-result">
               {part.toolName} returned: {JSON.stringify(part.result)}
             </div>
           );
