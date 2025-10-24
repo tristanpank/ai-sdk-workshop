@@ -1,4 +1,8 @@
 import { NextRequest } from "next/server";
+import { convertToModelMessages, streamText, UIMessage, tool } from "ai";
+import { z } from "zod";
+import { createOpenAI, openai } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 // TODO: Import necessary functions from the AI SDK
 // Hint: You'll need streamText from 'ai'
 // Hint: You'll need openai from '@ai-sdk/openai' or another provider

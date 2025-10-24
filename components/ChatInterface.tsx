@@ -1,15 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  // TODO: Use useChat to get message and sendMessage
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -17,38 +14,15 @@ export default function ChatInterface() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-    };
+    // TODO: Send messages to api /chat endpoint here
 
-    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
-    try {
-      // TODO: Workshop participants will implement the API call here
-      // Hint: Use fetch() to call /api/chat with POST method
-      // Hint: Send messages in the request body
-      // Hint: Handle the streaming response
-
-      // Placeholder for now - remove this when implementing
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "TODO: Implement API call to /api/chat endpoint",
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
       {/* Chat Messages */}
       <div className="h-[500px] overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
@@ -59,6 +33,7 @@ export default function ChatInterface() {
             </p>
           </div>
         ) : (
+          // This maps over the messages and displays them according to message type/role
           messages.map((message) => (
             <div
               key={message.id}
@@ -73,7 +48,39 @@ export default function ChatInterface() {
                     : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                {message.parts?.map((part: any, idx: number) => {
+                  switch (part.type) {
+                    // This renders normal text parts
+                    case "text":
+                      return (
+                        <p
+                          key={part.id ?? idx}
+                          className="text-sm whitespace-pre-wrap"
+                        >
+                          {part.text}
+                        </p>
+                      );
+
+                    // TODO: Handle tool calls
+
+
+                    default: {
+                      // Fallback for unexpected part types
+                      const text =
+                        typeof part === "string"
+                          ? part
+                          : part.content ?? part.text ?? "";
+                      return (
+                        <p
+                          key={part.id ?? idx}
+                          className="text-sm whitespace-pre-wrap"
+                        >
+                          {text}
+                        </p>
+                      );
+                    }
+                  }
+                })}
               </div>
             </div>
           ))
