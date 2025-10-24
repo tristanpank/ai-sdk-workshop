@@ -1,50 +1,28 @@
 "use client";
 
 import { useState } from "react";
-
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { messages, sendMessage } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+    }),
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+  });
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
+    if (!input.trim()) return;
     setIsLoading(true);
-
-    try {
-      // TODO: Workshop participants will implement the API call here
-      // Hint: Use fetch() to call /api/chat with POST method
-      // Hint: Send messages in the request body
-      // Hint: Handle the streaming response
-
-      // Placeholder for now - remove this when implementing
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "TODO: Implement API call to /api/chat endpoint",
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    await sendMessage({
+      text: input,
+    });
+    setInput("");
+    setIsLoading(false);
   };
 
   return (
@@ -73,7 +51,79 @@ export default function ChatInterface() {
                     : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                {message.parts?.map((part: any, idx: number) => {
+                  switch (part.type) {
+                    case "text":
+                      return (
+                        <p
+                          key={part.id ?? idx}
+                          className="text-sm whitespace-pre-wrap"
+                        >
+                          {part.text}
+                        </p>
+                      );
+
+                    case "tool-squareRoot": {
+                      const callId = part.toolCallId;
+
+                      switch (part.state) {
+                        // case "input-streaming":
+                        //   return (
+                        //     <div key={callId} className="text-sm">
+                        //       Preparing square root request...
+                        //     </div>
+                        //   );
+                        // case "input-available": {
+                        //   const n =
+                        //     part.input?.number ??
+                        //     part.input;
+                        //   const dp =
+                        //     part.input?.decimalPlaces ??
+                        //     undefined;
+                        //   return (
+                        //     <div key={callId} className="text-sm">
+                        //       {`Computing √${n}${
+                        //         typeof dp === "number"
+                        //           ? ` with ${dp} decimal places`
+                        //           : ""
+                        //       }...`}
+                        //     </div>
+                        //   );
+                        // }
+                        case "output-available":
+                          return (
+                            <div key={callId} className="text-sm">
+                              Square root: {String(part.output?.result)}
+                            </div>
+                          );
+                        case "output-error":
+                          return (
+                            <div key={callId} className="text-sm text-red-600">
+                              Error: {part.errorText}
+                            </div>
+                          );
+                        default:
+                          return null;
+                      }
+                    }
+
+                    default: {
+                      // Fallback for unexpected part types
+                      const text =
+                        typeof part === "string"
+                          ? part
+                          : part.content ?? part.text ?? "";
+                      return (
+                        <p
+                          key={part.id ?? idx}
+                          className="text-sm whitespace-pre-wrap"
+                        >
+                          {text}
+                        </p>
+                      );
+                    }
+                  }
+                })}
               </div>
             </div>
           ))
